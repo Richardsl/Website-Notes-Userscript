@@ -1,92 +1,80 @@
 // ==UserScript==
-// @name        richard.sl - myDescription
-// @namespace   richard.sl Scripts
+// @name        richard.sl - Custom Note On Website
+// @namespace   www.richard.sl Scripts
 // @match       *://www.richard.sl/*
-// @version     1.0
+// @grant       GM_setValue
+// @grant       GM_getValue
+// @grant       GM_deleteValue
+// @version     2
 // @author      Richard Slettevoll
 // @description created: 2023-11-03, 18:13:32
 // ==/UserScript==
 
-// Script configuration: Start
-var overlayText = `Hello World
-This is the second line
-And this is the third one.`;
-var initialTop = '50px'; // Change this to set the initial vertical position
-var initialLeft = '50px'; // Change this to set the initial horizontal position
-var initialWidth = '200px'; // Change this to set the initial width of the textarea
-var initialHeight = '100px'; // Change this to set the initial height of the textarea
-var backgroundColor = '#90ee90'; // Light green background for eye-pleasing color
-var borderColor = '#333'; // Border color
-// Script configuration: End
+// set variable with current unix timestamp at the time of page load
+var unixTimestamp = (new Date()).getTime();
+//console.log('Custom Note On Website script started at ' + unixTimestamp);
 
-// Create the overlay
+// Retrieve stored values or use defaults
+var textareaText = GM_getValue('textareaText', 'Hello World\nThis is the second line\nAnd this is the third one.');
+var overlayDivWidth = GM_getValue('overlayDivWidth', 200);
+var overlayDivHeight = GM_getValue('overlayDivHeight', 100);
+var overlayTop = GM_getValue('overlayTop', 50);
+var overlayLeft = GM_getValue('overlayLeft', 50);
+var backgroundColor = GM_getValue('backgroundColor', '#90ee90');
+var borderColor = GM_getValue('borderColor', '#333');
+var overlayTopPadding = GM_getValue('overlayTopPadding', 5);
+
+// Create the overlay div with the textarea inside and values from above
 var overlay = document.createElement('div');
+document.body.appendChild(overlay); // Append early to set styles properly
+
+// Apply styles to the overlay
 overlay.style.position = 'fixed';
-overlay.style.top = initialTop;
-overlay.style.left = initialLeft;
-overlay.style.padding = '10px';
+overlay.style.top = overlayTop + 'px'; // Set top with 'px'
+overlay.style.left = overlayLeft + 'px'; // Set left with 'px'
+overlay.style.padding = overlayTopPadding + 'px 0px 0px 0px'; // Set padding with 'px'
 overlay.style.backgroundColor = backgroundColor;
-overlay.style.border = '2px solid ' + borderColor; // Slight border
-overlay.style.boxSizing = 'border-box';
+overlay.style.border = '2px solid ' + borderColor;
+overlay.style.boxSizing = 'content-box';
 overlay.style.cursor = 'move';
 overlay.style.zIndex = '10000';
+overlay.style.width = overlayDivWidth + 'px'; // Set width with 'px'
+overlay.style.height = overlayDivHeight + 'px'; // Set height with 'px'
 
 // Create the textarea for multi-line text
 var textArea = document.createElement('textarea');
-textArea.style.width = initialWidth;
-textArea.style.height = initialHeight;
+overlay.appendChild(textArea); // Append early to set styles properly
+
+// Apply styles to the textarea
+textArea.style.width = (overlayDivWidth - (overlayTopPadding * 2)) + 'px'; // Set width with 'px'
+textArea.style.height = (overlayDivHeight - (overlayTopPadding * 2)) + 'px'; // Set height with 'px'
+textArea.style.boxSizing = 'content-box';
 textArea.style.resize = 'both'; // Allow resizing
-textArea.textContent = overlayText;
+textArea.value = textareaText; // Use 'value' for textarea content
 
-// Create a span to show position offset
-var offsetDisplay = document.createElement('span');
-offsetDisplay.style.position = 'absolute';
-offsetDisplay.style.bottom = '100%'; // Position above the overlay
-offsetDisplay.style.left = '0';
-offsetDisplay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
-offsetDisplay.style.padding = '2px 5px';
-offsetDisplay.style.display = 'none'; // Initially hidden
-overlay.appendChild(offsetDisplay);
+// textareaResizeObserver to resize the overlay div when the textarea is resized by the user (but not save state)
+var textareaResizeObserver = new ResizeObserver(function (entries) {
+    // if 1 secs has passed since page load
+    if (((new Date()).getTime() - unixTimestamp) > 1000) {
+        for (var entry of entries) {
+            //console.log('textareaResizeObserver, w:' + entry.contentRect.width + " h:" + entry.contentRect.height);
+            var contentRect = entry.contentRect;
+            overlay.style.width = contentRect.width + overlayTopPadding + 4 + 'px';
+            overlay.style.height = contentRect.height + overlayTopPadding + 4 + 'px';
+        }
 
-// Create a span to show size during resize
-var sizeDisplay = document.createElement('span');
-sizeDisplay.style.position = 'absolute';
-sizeDisplay.style.top = '100%'; // Position below the textarea
-sizeDisplay.style.left = '0';
-sizeDisplay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
-sizeDisplay.style.padding = '2px 5px';
-sizeDisplay.style.display = 'none'; // Initially hidden
-overlay.appendChild(sizeDisplay);
+        saveWidthHeightState();
+    }
+});
+textareaResizeObserver.observe(textArea);
 
-// Append the textarea to the overlay
-overlay.appendChild(textArea);
-
-// Append the overlay to the body
-document.body.appendChild(overlay);
-
-// Function to update the offset display
-function updateOffsetDisplay(x, y) {
-    offsetDisplay.textContent = `Position: X ${x}px, Y ${y}px`;
-    offsetDisplay.style.display = 'block';
+// save the position of the overlay box minus the 'px' at the end
+function savePositionState() {
+    //console.log('savePositionState, l:' + overlay.style.left + " t:" + overlay.style.top);
+    GM_setValue('overlayTop', overlay.style.top.slice(0, -2));
+    GM_setValue('overlayLeft', overlay.style.left.slice(0, -2));
 }
-
-// Function to hide the offset display
-function hideOffsetDisplay() {
-    offsetDisplay.style.display = 'none';
-}
-
-// Function to update the size display
-function updateSizeDisplay(w, h) {
-    sizeDisplay.textContent = `Size: W ${w}px, H ${h}px`;
-    sizeDisplay.style.display = 'block';
-}
-
-// Function to hide the size display
-function hideSizeDisplay() {
-    sizeDisplay.style.display = 'none';
-}
-
-// Make the overlay movable
+// Make overlay div movable
 overlay.onmousedown = function (event) {
     if (event.target === textArea) {
         // Allow normal interactions with the textarea
@@ -95,68 +83,51 @@ overlay.onmousedown = function (event) {
 
     event.preventDefault();
 
-    var startX = overlay.offsetLeft;
-    var startY = overlay.offsetTop;
-    var mouseX = event.clientX;
-    var mouseY = event.clientY;
+    var startX = event.clientX;
+    var startY = event.clientY;
 
     function onMouseMove(event) {
-        var deltaX = event.clientX - mouseX;
-        var deltaY = event.clientY - mouseY;
+        var deltaX = event.clientX - startX;
+        var deltaY = event.clientY - startY;
 
-        var newLeft = startX + deltaX;
-        var newTop = startY + deltaY;
+        overlay.style.left = (parseInt(overlay.style.left, 10) + deltaX) + 'px';
+        overlay.style.top = (parseInt(overlay.style.top, 10) + deltaY) + 'px';
 
-        overlay.style.left = newLeft + 'px';
-        overlay.style.top = newTop + 'px';
-
-        updateOffsetDisplay(newLeft, newTop);
+        startX = event.clientX;
+        startY = event.clientY;
     }
 
     document.addEventListener('mousemove', onMouseMove);
 
-    overlay.onmouseup = function () {
+    document.addEventListener('mouseup', function mouseUpHandler() {
         document.removeEventListener('mousemove', onMouseMove);
-        overlay.onmouseup = null;
-        hideOffsetDisplay();
-    };
+        document.removeEventListener('mouseup', mouseUpHandler);
+        savePositionState(); // Save the position after moving
+
+    }, { once: true });
 };
 
-// Add resize functionality to the textarea
-textArea.addEventListener('mousedown', function (event) {
-    // Stop propagation to prevent the overlay drag functionality from triggering
-    event.stopPropagation();
-    hasBeenResized = true; // Set the flag to true when starting to resize
-});
+// save textarea content
+function savetextareaTextState() {
+    //console.log('savetextareaTextState saved');
+    GM_setValue('textareaText', textArea.value);
+}
+textArea.addEventListener('input', savetextareaTextState);
 
-// Flag to check if the textarea has been interacted with
-var hasBeenResized = false;
+// save width and height when 1 second has passed since last resize, but not during first 1 sec of page initial load
+var lastSavedTimestamp = unixTimestamp;
+function saveWidthHeightState() {
+    //console.log('saveWidthHeightState saved');
+    // if 2 secs has passed since page load, save width and height
+    if (((new Date()).getTime() - unixTimestamp) > 2000) {
 
-// Monitor the resize events on the textarea
-var resizeObserver = new ResizeObserver(function (entries) {
-    if (hasBeenResized) { // Only display size if the flag is true
-        for (let entry of entries) {
-            var boxRect = entry.target.getBoundingClientRect();
-            updateSizeDisplay(boxRect.width, boxRect.height);
+        // if 0.1 sec has passed since last save, save width and height
+        if (((new Date()).getTime() - lastSavedTimestamp) > 100) {
+            GM_setValue('overlayDivWidth', overlay.style.width.slice(0, -2));
+            GM_setValue('overlayDivHeight', overlay.style.height.slice(0, -2));
+            // set new unixTimestamp for last save time
+            lastSavedTimestamp = (new Date()).getTime();
         }
     }
-});
-resizeObserver.observe(textArea);
+}
 
-// When starting to resize, set the flag to true
-textArea.addEventListener('mousedown', function () {
-    hasBeenResized = true;
-});
-
-// Disable the default drag handler to prevent conflicts
-overlay.ondragstart = function () {
-    return false;
-};
-
-// To ensure the size display disappears after resizing
-document.addEventListener('mouseup', function () {
-    if (hasBeenResized) { // Check if there was a resize action
-        hideSizeDisplay(); // Hide the size display
-        hasBeenResized = false; // Reset the flag
-    }
-});
