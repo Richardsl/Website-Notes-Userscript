@@ -1,8 +1,8 @@
-<p>
-    <img alt="logo" src="https://raw.githubusercontent.com/Richardsl/Website-Notes-Userscript/main/readme_files/logo.png" width="100" height="100">
+<p align="center" width="100%">
+    <img src="https://raw.githubusercontent.com/Richardsl/Website-Notes-Userscript/main/readme_files/logo.png" alt="Stanford-Alpaca" style="width: 15%; min-width: 30px; display: block; margin: auto;">
 </p>
 
-# Website Notes Userscript
+# Website Notes
 
 A userscript to add notes to any website.
 
