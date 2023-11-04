@@ -1,8 +1,5 @@
 <p>
-    <picture>
-      <source srcset="https://github.com/Richardsl/abc123.gif?raw=true">
-      <img alt="logo for the application" src="https://user-images.githubusercontent.com/abc123.png">
-    </picture>
+    <img alt="logo" src="https://raw.githubusercontent.com/Richardsl/Website-Notes-Userscript/main/readme_files/logo.png" width="100" height="100">
 </p>
 
 # Website Notes Userscript
@@ -13,8 +10,8 @@ The notes are movable and resizeable, and will persist when refreshing or closin
 
 <p>
     <picture>
-      <source srcset="https://github.com/Richardsl/abc123.gif?raw=true">
-      <img alt="gif showcasing the user interface of the application" src="https://user-images.githubusercontent.com/abc123.png">
+      <source srcset="https://raw.githubusercontent.com/Richardsl/Website-Notes-Userscript/main/readme_files/showcase1.gif?raw=true">
+      <img alt="gif showcasing the user interface of the application" src="https://raw.githubusercontent.com/Richardsl/Website-Notes-Userscript/main/readme_files/showcase1.gif">
     </picture>
 </p>
 
